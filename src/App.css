@@ -1,0 +1,120 @@
+/* src/App.css */
+body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    overflow: hidden;
+    color: #000;
+}
+
+.app-container {
+    display: flex;
+    width: 100vw;
+    height: 100vh;
+}
+
+/* --- Cột 1: Sidebar --- */
+.sidebar {
+    width: 90px;
+    background-color: #1d429a;
+    /* Màu xanh của bạn */
+    color: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 20px;
+    z-index: 50;
+    flex-shrink: 0;
+}
+
+.sidebar-item {
+    background: none;
+    border: none;
+    color: #f0f0f0;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 25px;
+    font-size: 12px;
+    width: 70px;
+    padding: 5px 0;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.sidebar-item:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-item.active {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.sidebar-item svg {
+    font-size: 24px;
+    margin-bottom: 5px;
+}
+
+/* --- Cột 2: 3D Viewer --- */
+.viewer-container {
+    flex: 1;
+    background: #f0f0f0;
+    position: relative;
+    /* Quan trọng cho Canvas */
+}
+
+/* --- Cột 3: 2D Editor --- */
+.editor-container {
+    width: 450px;
+    background: #ffffff;
+    border-left: 1px solid #ddd;
+    padding: 20px;
+    overflow-y: auto;
+    flex-shrink: 0;
+}
+
+.editor-header {
+    font-size: 18px;
+    font-weight: 600;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+    margin-bottom: 20px;
+}
+
+.konva-container {
+    border: 1px dashed #999;
+    background-color: #f9f9f9;
+    /* Kích thước sẽ được set bởi JS */
+    max-width: 100%;
+    /* Đảm bảo không tràn */
+    margin-bottom: 20px;
+}
+
+/* CSS cho khu vực công cụ bên trong Editor2D */
+.tools-area h4 {
+    margin-top: 15px;
+    margin-bottom: 5px;
+}
+
+/* CSS cho bảng màu (Grid 6 cột) */
+.color-options {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    /* Tạo lưới 6 cột */
+    gap: 10px;
+    /* Khoảng cách giữa các ô */
+    margin-top: 10px;
+}
+
+.color-swatch {
+    width: 30px;
+    /* Kích thước ô màu */
+    height: 30px;
+    border-radius: 50%;
+    /* Bo tròn */
+    cursor: pointer;
+    border: 1px solid #ccc;
+    /* Viền nhẹ */
+    box-sizing: border-box;
+    /* Đảm bảo padding/border nằm trong kích thước */
+}
