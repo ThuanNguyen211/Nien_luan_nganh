@@ -1,9 +1,10 @@
+// src/components/Sidebar.jsx
 import React from 'react';
 import { FaPalette, FaImage, FaFont, FaShapes } from 'react-icons/fa';
 
 export function Sidebar({ activeTool, setActiveTool }) {
   const handleToolToggle = (toolName) => {
-    setActiveTool(prevTool => (prevTool === toolName ? null : toolName));
+    setActiveTool(prev => prev === toolName ? null : toolName);
   };
 
   return (

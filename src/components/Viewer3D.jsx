@@ -1,91 +1,94 @@
 // src/components/Viewer3D.jsx
-import React, { Suspense, useMemo, useRef, useEffect } from 'react';
+import React, { Suspense, useMemo, useEffect, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, useGLTF } from '@react-three/drei'; // Chỉ import những gì cần
+import { OrbitControls, useGLTF, useTexture } from '@react-three/drei';
 import * as THREE from 'three';
 
-// --- COMPONENT MODEL 3D (Chỉ xử lý màu) ---
-function Model({ shirtColor }) {
-  const groupRef = useRef();
-  const { nodes, materials } = useGLTF('/tshirt.glb'); // Tải model
+const BLANK_TEXTURE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
 
-  // --- TẠO VẬT LIỆU MỚI CHỈ VỚI MÀU SẮC ---
-  const customMaterial = useMemo(() => {
-    console.log("Creating/Updating material. Color:", shirtColor);
+function Model({ shirtColor, designTexture }) {
+  const { scene, materials } = useGLTF('/tshirt.glb');
+  const design = useTexture(designTexture || BLANK_TEXTURE);
+  if (designTexture) design.flipY = false;
 
-    // Tìm vật liệu gốc (SỬA LẠI TÊN 'FABRIC_1_FRONT_4193' NẾU CẦN)
-    const baseMaterialKey = Object.keys(materials).find(key => key === 'FABRIC_1_FRONT_4193') || Object.keys(materials)[0];
-    const baseMaterial = materials[baseMaterialKey];
-
-    // Tạo vật liệu standard mới chỉ với màu
-    const material = new THREE.MeshStandardMaterial({
-        color: shirtColor, // Áp dụng màu áo
-        roughness: baseMaterial?.roughness ?? 0.8, // Lấy độ nhám từ gốc hoặc mặc định
-        metalness: baseMaterial?.metalness ?? 0.1, // Lấy độ kim loại từ gốc hoặc mặc định
-        map: baseMaterial?.map || null // Giữ lại map gốc (nếu có) để áo không bị "trơn"
-    });
-    // material.needsUpdate = true; // Không cần khi tạo mới trong useMemo với dependency đúng
-
-    return material;
-  // Chỉ phụ thuộc vào shirtColor và materials gốc
-  }, [materials, shirtColor]);
-
-  // --- Căn giữa thủ công (Giữ nguyên) ---
   useEffect(() => {
-    if (groupRef.current) {
-        const box = new THREE.Box3().setFromObject(groupRef.current);
-        const center = box.getCenter(new THREE.Vector3());
-        groupRef.current.position.x += (groupRef.current.position.x - center.x);
-        groupRef.current.position.y += (groupRef.current.position.y - center.y);
-        groupRef.current.position.z += (groupRef.current.position.z - center.z);
-        // console.log("Model centered manually."); // Có thể comment bớt log
+    if (scene) {
+      scene.traverse(child => {
+        if (child.isMesh) console.log(`Mesh: ${child.name}`);
+      });
     }
-  }, []);
+  }, [scene]);
 
-  // Tìm geometry (Sửa lại tên nếu cần - Vd: 'Object_4')
-  const mainGeometry = nodes.Object_4?.geometry;
-  const otherGeometries = [
-      nodes.Object_5?.geometry,
-      nodes.Object_6?.geometry,
-      nodes.Object_7?.geometry
-  ].filter(Boolean);
+  const customMaterial = useMemo(() => {
+    let baseMat = materials?.['Material.001'] || (materials && materials[Object.keys(materials)[0]]);
+    if (!baseMat) {
+      console.warn('Using fallback material');
+      return new THREE.MeshStandardMaterial({ color: shirtColor });
+    }
+    const mat = baseMat.clone();
+    mat.color.set(shirtColor);
+    mat.map = designTexture ? design : null;
+    mat.needsUpdate = true;
+    return mat;
+  }, [materials, shirtColor, design, designTexture]);
 
-  // Tạo key để ép re-render mesh khi màu thay đổi
-  const meshKey = `${shirtColor}`;
+  useEffect(() => {
+    if (!scene || !customMaterial) return;
+    let applied = false;
+    const targets = ['shirt', 'tshirt', 'body'];
+    scene.traverse(child => {
+      if (child.isMesh && targets.some(t => child.name.toLowerCase().includes(t))) {
+        child.material = customMaterial;
+        applied = true;
+      }
+    });
+    if (!applied) {
+      scene.traverse(child => {
+        if (child.isMesh) child.material = customMaterial;
+      });
+    }
+  }, [scene, customMaterial]);
 
-  return (
-    // Sử dụng rotation/scale phù hợp
-    <group ref={groupRef} dispose={null} rotation={[-Math.PI / 2, Math.PI, Math.PI]} scale={0.007}>
-      {/* Áp dụng vật liệu mới và key */}
-      {mainGeometry && (
-          <mesh key={meshKey + '-main'} geometry={mainGeometry} material={customMaterial} />
-      )}
-      {otherGeometries.map((geom, index) => (
-          <mesh key={meshKey + '-' + index} geometry={geom} material={customMaterial} />
-      ))}
-    </group>
-  );
+  return <primitive object={scene} />;
 }
-// --- KẾT THÚC COMPONENT MODEL ---
 
-// --- COMPONENT VIEWER CHÍNH ---
-export function Viewer3D({ shirtColor }) { // Chỉ nhận shirtColor
+export function Viewer3D({ shirtColor, designTexture }) {
+  const [maxSize, setMaxSize] = useState(4096);
+  const [scaledTex, setScaledTex] = useState(null);
+
+  useEffect(() => {
+    if (!designTexture) return setScaledTex(null);
+    let mounted = true;
+    const img = new Image();
+    img.src = designTexture;
+    img.onload = () => {
+      if (!mounted) return;
+      const w = img.naturalWidth, h = img.naturalHeight;
+      if (w <= maxSize && h <= maxSize) return setScaledTex(designTexture);
+      const scale = Math.min(maxSize / w, maxSize / h);
+      const canvas = document.createElement('canvas');
+      canvas.width = w * scale;
+      canvas.height = h * scale;
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      setScaledTex(canvas.toDataURL('image/png'));
+    };
+    return () => { mounted = false; };
+  }, [designTexture, maxSize]);
+
   return (
+    <div style={{ width: '100%', height: '100%' }}>
       <Canvas
-        // Sử dụng camera/target bạn đã tìm được
-        camera={{ position: [0.289, -9.282, 5.142], fov: 75 }}
+        onCreated={({ gl }) => setMaxSize(gl.capabilities?.maxTextureSize || 4096)}
+        camera={{ position: [-0.006, 1.492, 0.712], fov: 75 }}
         style={{ background: '#f0f0f0' }}
       >
         <ambientLight intensity={1.5} />
         <directionalLight position={[10, 10, 5]} intensity={1} />
         <Suspense fallback={null}>
-          <Model
-            shirtColor={shirtColor}
-            // Không truyền designTexture nữa
-          />
+          <Model shirtColor={shirtColor} designTexture={scaledTex || designTexture} />
         </Suspense>
-        {/* Sử dụng camera/target bạn đã tìm được */}
-        <OrbitControls target={[-0.252, -9.807, -0.347]} />
+        <OrbitControls target={[0.019, 1.229, -0.031]} />
       </Canvas>
+    </div>
   );
 }
