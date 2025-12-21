@@ -6,21 +6,23 @@ import * as THREE from 'three';
 
 const BLANK_TEXTURE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
 
-function Model({ shirtColor, designTexture }) {
-  const { scene, materials } = useGLTF('/tshirt.glb');
+function Model({ productConfig, productColor, designTexture }) {
+  const { scene, materials } = useGLTF(productConfig?.model || '/tshirt.glb');
   const design = useTexture(designTexture || BLANK_TEXTURE);
   if (designTexture) design.flipY = false;
+
+  const meshTargets = productConfig?.meshTargets || ['shirt', 'tshirt', 'body'];
 
   const customMaterial = useMemo(() => {
     let baseMat = materials?.['Material.001'] || (materials && materials[Object.keys(materials)[0]]);
     if (!baseMat) {
-      return new THREE.MeshStandardMaterial({ color: shirtColor });
+      return new THREE.MeshStandardMaterial({ color: productColor });
     }
     const mat = baseMat.clone();
-    mat.color.set(shirtColor);
+    mat.color.set(productColor);
     
     if (designTexture && design) {
-      // Tạo canvas để blend texture với màu áo
+      // Tạo canvas để blend texture với màu sản phẩm
       const canvas = document.createElement('canvas');
       const img = design.image;
       if (img) {
@@ -28,15 +30,20 @@ function Model({ shirtColor, designTexture }) {
         canvas.height = img.height;
         const ctx = canvas.getContext('2d');
         
-        // 1. Flip và vẽ design trước
+        // Flip bằng canvas - flip quanh tâm để giữ vị trí
+        const flipX = productConfig?.textureFlip?.x ?? 1;
+        const flipY = productConfig?.textureFlip?.y ?? 1;
+        
         ctx.save();
-        ctx.scale(1, -1);
-        ctx.drawImage(img, 0, -canvas.height);
+        ctx.translate(canvas.width / 2, canvas.height / 2);
+        ctx.scale(flipX, flipY);
+        ctx.translate(-canvas.width / 2, -canvas.height / 2);
+        ctx.drawImage(img, 0, 0);
         ctx.restore();
         
-        // 2. Vẽ màu áo PHÍA SAU design (chỉ ở vùng transparent)
+        // Vẽ màu sản phẩm PHÍA SAU design (chỉ ở vùng transparent)
         ctx.globalCompositeOperation = 'destination-over';
-        ctx.fillStyle = shirtColor;
+        ctx.fillStyle = productColor;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.globalCompositeOperation = 'source-over';
         
@@ -54,14 +61,14 @@ function Model({ shirtColor, designTexture }) {
     mat.needsUpdate = true;
     
     return mat;
-  }, [materials, shirtColor, design, designTexture]);
+  }, [materials, productColor, design, designTexture, productConfig]);
 
   useEffect(() => {
     if (!scene || !customMaterial) return;
+    
     let applied = false;
-    const targets = ['shirt', 'tshirt', 'body'];
     scene.traverse(child => {
-      if (child.isMesh && targets.some(t => child.name.toLowerCase().includes(t))) {
+      if (child.isMesh && meshTargets.some(t => child.name.toLowerCase().includes(t))) {
         child.material = customMaterial;
         applied = true;
       }
@@ -71,14 +78,21 @@ function Model({ shirtColor, designTexture }) {
         if (child.isMesh) child.material = customMaterial;
       });
     }
-  }, [scene, customMaterial]);
+  }, [scene, customMaterial, meshTargets]);
 
   return <primitive object={scene} />;
 }
 
-export function Viewer3D({ shirtColor, designTexture }) {
+export function Viewer3D({ productConfig, productColor, designTexture }) {
   const [maxSize, setMaxSize] = useState(4096);
   const [scaledTex, setScaledTex] = useState(null);
+
+  // Preload model
+  useEffect(() => {
+    if (productConfig?.model) {
+      useGLTF.preload(productConfig.model);
+    }
+  }, [productConfig?.model]);
 
   useEffect(() => {
     if (!designTexture) return setScaledTex(null);
@@ -99,19 +113,29 @@ export function Viewer3D({ shirtColor, designTexture }) {
     return () => { mounted = false; };
   }, [designTexture, maxSize]);
 
+  // Camera settings from product config
+  const cameraPosition = productConfig?.camera?.position || [-0.006, 1.492, 0.712];
+  const cameraTarget = productConfig?.camera?.target || [0.019, 1.229, -0.031];
+  const cameraFov = productConfig?.camera?.fov || 75;
+
   return (
     <div style={{ width: '100%', height: '100%' }}>
       <Canvas
+        key={productConfig?.id}
         onCreated={({ gl }) => setMaxSize(gl.capabilities?.maxTextureSize || 4096)}
-        camera={{ position: [-0.006, 1.492, 0.712], fov: 75 }}
+        camera={{ position: cameraPosition, fov: cameraFov }}
         style={{ background: '#f0f0f0' }}
       >
         <ambientLight intensity={1.5} />
         <directionalLight position={[10, 10, 5]} intensity={1} />
         <Suspense fallback={null}>
-          <Model shirtColor={shirtColor} designTexture={scaledTex || designTexture} />
+          <Model 
+            productConfig={productConfig} 
+            productColor={productColor} 
+            designTexture={scaledTex || designTexture} 
+          />
         </Suspense>
-        <OrbitControls target={[0.019, 1.229, -0.031]} />
+        <OrbitControls target={cameraTarget} />
       </Canvas>
     </div>
   );

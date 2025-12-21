@@ -63,10 +63,48 @@ body {
   letter-spacing: -0.5px;
 }
 
-.app-title {
-  font-size: 16px;
+/* Product Selector */
+.product-selector {
+  display: flex;
+  gap: 8px;
+  margin-left: 16px;
+  padding-left: 16px;
+  border-left: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.product-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: white;
+  font-size: 13px;
   font-weight: 500;
-  opacity: 0.9;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.product-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.product-btn.active {
+  background: rgba(255, 255, 255, 0.95);
+  color: var(--primary-color);
+  border-color: transparent;
+  font-weight: 600;
+}
+
+.product-btn .product-icon {
+  font-size: 16px;
+}
+
+.product-btn .product-name {
+  font-size: 13px;
 }
 
 .app-header-right {

@@ -4,6 +4,7 @@ import './App.css';
 import { Viewer3D } from './components/Viewer3D';
 import { Editor2D } from './components/Editor2D';
 import { Sidebar } from './components/Sidebar';
+import { PRODUCTS, PRODUCT_ORDER, DEFAULT_PRODUCT } from './config/products';
 
 // --- ERROR BOUNDARY (ĐÚNG CHUẨN REACT 18+) ---
 class ErrorBoundary extends React.Component {
@@ -39,7 +40,11 @@ class ErrorBoundary extends React.Component {
 export default function App() {
   const stageRef = useRef();
 
-  const [shirtColor, setShirtColor] = useState('#ffffff');
+  // Product selection
+  const [selectedProduct, setSelectedProduct] = useState(DEFAULT_PRODUCT);
+  const currentProduct = PRODUCTS[selectedProduct];
+
+  const [productColor, setProductColor] = useState(currentProduct.defaultColor);
   const [previewTexture, setPreviewTexture] = useState(null);
   const [images, setImages] = useState([]);
   const [texts, setTexts] = useState([]);
@@ -48,6 +53,24 @@ export default function App() {
   const [autoPreview, setAutoPreview] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
   const [templateSize, setTemplateSize] = useState({ width: 1024, height: 1024 });
+
+  // Reset design khi đổi sản phẩm
+  const handleProductChange = (productId) => {
+    if (productId === selectedProduct) return;
+    
+    const confirmChange = images.length > 0 || texts.length > 0 || shapes.length > 0
+      ? window.confirm('Đổi sản phẩm sẽ xóa thiết kế hiện tại. Bạn có muốn tiếp tục?')
+      : true;
+    
+    if (confirmChange) {
+      setSelectedProduct(productId);
+      setProductColor(PRODUCTS[productId].defaultColor);
+      setImages([]);
+      setTexts([]);
+      setShapes([]);
+      setPreviewTexture(null);
+    }
+  };
 
   // Auto-preview với debounce khi design thay đổi
   const autoExportTexture = useCallback(async () => {
@@ -103,9 +126,10 @@ export default function App() {
   //  SAVE DESIGN - Xuất file JSON
   const handleSave = () => {
     const designData = {
-      version: '1.0',
+      version: '1.1',
       createdAt: new Date().toISOString(),
-      shirtColor,
+      product: selectedProduct,
+      productColor,
       images: images.map(img => ({
         ...img,
         // Giữ nguyên src base64
@@ -120,7 +144,7 @@ export default function App() {
     const url = URL.createObjectURL(blob);
     
     const link = document.createElement('a');
-    link.download = `tshirt-design-${Date.now()}.json`;
+    link.download = `${selectedProduct}-design-${Date.now()}.json`;
     link.href = url;
     document.body.appendChild(link);
     link.click();
@@ -145,7 +169,15 @@ export default function App() {
         }
 
         // Load design data
-        if (designData.shirtColor) setShirtColor(designData.shirtColor);
+        if (designData.product && PRODUCTS[designData.product]) {
+          setSelectedProduct(designData.product);
+        }
+        if (designData.productColor) {
+          setProductColor(designData.productColor);
+        } else if (designData.shirtColor) {
+          // Backward compatibility với file cũ
+          setProductColor(designData.shirtColor);
+        }
         if (designData.images) setImages(designData.images);
         if (designData.texts) setTexts(designData.texts);
         if (designData.shapes) setShapes(designData.shapes);
@@ -231,7 +263,22 @@ export default function App() {
       <header className="app-header">
         <div className="app-header-left">
           <div className="app-logo">POD Designer</div>
-          <div className="app-title">Custom T-Shirt Design Studio</div>
+          <div className="product-selector">
+            {PRODUCT_ORDER.map(productId => {
+              const product = PRODUCTS[productId];
+              return (
+                <button
+                  key={productId}
+                  className={`product-btn ${selectedProduct === productId ? 'active' : ''}`}
+                  onClick={() => handleProductChange(productId)}
+                  title={product.label}
+                >
+                  <span className="product-icon">{product.icon}</span>
+                  <span className="product-name">{product.name}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
         <div className="app-header-right">
           {/* Import Button */}
@@ -255,7 +302,8 @@ export default function App() {
         <div className="viewer-container">
           <ErrorBoundary>
             <Viewer3D
-              shirtColor={shirtColor}
+              productConfig={currentProduct}
+              productColor={productColor}
               designTexture={previewTexture}
             />
           </ErrorBoundary>
@@ -264,9 +312,10 @@ export default function App() {
         <div className="editor-container">
           <Editor2D
             stageRef={stageRef}
+            productConfig={currentProduct}
             activeTool={activeTool}
-            shirtColor={shirtColor}
-            setShirtColor={setShirtColor}
+            productColor={productColor}
+            setProductColor={setProductColor}
             images={images}
             setImages={setImages}
             texts={texts}

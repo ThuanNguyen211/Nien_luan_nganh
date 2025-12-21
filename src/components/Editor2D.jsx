@@ -153,8 +153,7 @@ const DraggableObject = ({ obj, onSelect, onChange, isSelected }) => {
 };
 
 const palette = [
-  '#FFFFFF', '#FF0000', '#00FF00', '#0000FF', '#FFFF00',
-  '#F0F0F0', '#CCCCCC',
+  '#FFFFFF', '#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#CCCCCC',
   '#F44336', '#E91E63', '#9C27B0', '#673AB7', '#FF9800', '#FF5722',
   '#FFEB3B', '#CDDC39', '#8BC34A', '#4CAF50', '#009688', '#00BCD4',
   '#03A9F4', '#2196F3', '#3F51B5', '#607D8B', '#9E9E9E', '#795548',
@@ -164,8 +163,9 @@ const palette = [
 
 export function Editor2D({
   stageRef,
+  productConfig,
   activeTool,
-  shirtColor, setShirtColor,
+  productColor, setProductColor,
   images, setImages,
   texts, setTexts,
   shapes, setShapes,
@@ -173,7 +173,7 @@ export function Editor2D({
   autoPreview, setAutoPreview,
   setTemplateSize
 }) {
-  const [templateImg] = useImage('/tshirt_uv_map.png');
+  const [templateImg] = useImage(productConfig?.uvMap || '/tshirt_uv_map.png');
   const [selectedId, setSelectedId] = useState(null);
   const containerRef = useRef(null);
 
@@ -312,7 +312,7 @@ export function Editor2D({
     if (activeTool === 'colors') {
       return (
         <div>
-          <div className="section-title">🎨 Shirt Color</div>
+          <div className="section-title">🎨 {productConfig?.name || 'Product'} Color</div>
           
           {/* Custom Color Picker */}
           <div className="custom-color-section">
@@ -320,16 +320,16 @@ export function Editor2D({
             <div className="color-picker-row">
               <input
                 type="color"
-                value={shirtColor}
-                onChange={(e) => setShirtColor(e.target.value)}
+                value={productColor}
+                onChange={(e) => setProductColor(e.target.value)}
                 className="color-picker-input"
               />
               <input
                 type="text"
-                value={shirtColor}
+                value={productColor}
                 onChange={(e) => {
                   const val = e.target.value;
-                  if (/^#[0-9A-Fa-f]{0,6}$/.test(val)) setShirtColor(val);
+                  if (/^#[0-9A-Fa-f]{0,6}$/.test(val)) setProductColor(val);
                 }}
                 className="color-hex-input"
                 placeholder="#FFFFFF"
@@ -344,8 +344,8 @@ export function Editor2D({
               {palette.map(color => (
                 <button
                   key={color}
-                  className={`color-swatch ${shirtColor === color ? 'selected' : ''}`}
-                  onClick={() => setShirtColor(color)}
+                  className={`color-swatch ${productColor === color ? 'selected' : ''}`}
+                  onClick={() => setProductColor(color)}
                   style={{ backgroundColor: color }}
                   title={color}
                 />
@@ -358,9 +358,9 @@ export function Editor2D({
             <span>Current: </span>
             <span 
               className="color-preview-box" 
-              style={{ backgroundColor: shirtColor }}
+              style={{ backgroundColor: productColor }}
             />
-            <span className="color-preview-text">{shirtColor}</span>
+            <span className="color-preview-text">{productColor}</span>
           </div>
         </div>
       );
