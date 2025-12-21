@@ -11,24 +11,48 @@ function Model({ shirtColor, designTexture }) {
   const design = useTexture(designTexture || BLANK_TEXTURE);
   if (designTexture) design.flipY = false;
 
-  useEffect(() => {
-    if (scene) {
-      scene.traverse(child => {
-        if (child.isMesh) console.log(`Mesh: ${child.name}`);
-      });
-    }
-  }, [scene]);
-
   const customMaterial = useMemo(() => {
     let baseMat = materials?.['Material.001'] || (materials && materials[Object.keys(materials)[0]]);
     if (!baseMat) {
-      console.warn('Using fallback material');
       return new THREE.MeshStandardMaterial({ color: shirtColor });
     }
     const mat = baseMat.clone();
     mat.color.set(shirtColor);
-    mat.map = designTexture ? design : null;
+    
+    if (designTexture && design) {
+      // Tạo canvas để blend texture với màu áo
+      const canvas = document.createElement('canvas');
+      const img = design.image;
+      if (img) {
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        
+        // 1. Flip và vẽ design trước
+        ctx.save();
+        ctx.scale(1, -1);
+        ctx.drawImage(img, 0, -canvas.height);
+        ctx.restore();
+        
+        // 2. Vẽ màu áo PHÍA SAU design (chỉ ở vùng transparent)
+        ctx.globalCompositeOperation = 'destination-over';
+        ctx.fillStyle = shirtColor;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.globalCompositeOperation = 'source-over';
+        
+        // Tạo texture mới từ canvas
+        const blendedTexture = new THREE.CanvasTexture(canvas);
+        blendedTexture.flipY = false;
+        blendedTexture.needsUpdate = true;
+        
+        mat.map = blendedTexture;
+      }
+    } else {
+      mat.map = null;
+    }
+    
     mat.needsUpdate = true;
+    
     return mat;
   }, [materials, shirtColor, design, designTexture]);
 

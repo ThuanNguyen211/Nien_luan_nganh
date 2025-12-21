@@ -92,6 +92,12 @@ body {
   transform: translateY(-1px);
 }
 
+.import-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
 /* ===== MAIN CONTENT ===== */
 .app-main {
   display: flex;
@@ -165,38 +171,10 @@ body {
   justify-content: center;
 }
 
-.viewer-overlay-btn {
-  position: absolute;
-  bottom: 24px;
-  right: 24px;
-  padding: 10px 20px;
-  background: rgba(255, 255, 255, 0.95);
-  color: var(--text-dark);
-  border: none;
-  border-radius: 12px;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  box-shadow: var(--shadow-lg);
-  transition: all 0.3s;
-  z-index: 10;
-  backdrop-filter: blur(10px);
-}
-
-.viewer-overlay-btn:hover {
-  background: white;
-  transform: translateY(-2px);
-  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
-}
-
-.viewer-overlay-btn.active {
-  background: var(--secondary-color);
-  color: white;
-}
-
 /* ===== EDITOR CONTAINER ===== */
 .editor-container {
-  width: 400px;
+  width: 520px;
+  min-width: 480px;
   overflow-y: auto;
   background: white;
   border-left: 1px solid var(--border-color);
@@ -269,7 +247,7 @@ body {
 
 .konva-container {
   width: 100%;
-  height: 400px;
+  min-height: 480px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -433,4 +411,421 @@ body {
 /* ===== TOOLS AREA ===== */
 .tools-area {
   animation: fadeIn 0.3s ease-out;
+}
+
+/* ===== CUSTOM COLOR PICKER ===== */
+.custom-color-section {
+  margin-bottom: 16px;
+}
+
+.color-picker-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-medium);
+  margin-bottom: 8px;
+}
+
+.color-picker-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.color-picker-input {
+  width: 50px;
+  height: 40px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  padding: 0;
+  background: none;
+}
+
+.color-picker-input::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.color-picker-input::-webkit-color-swatch {
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+}
+
+.color-hex-input {
+  flex: 1;
+  padding: 10px 12px;
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  font-family: monospace;
+  font-size: 14px;
+  text-transform: uppercase;
+  transition: border-color 0.2s;
+}
+
+.color-hex-input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+.current-color-preview {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  background: var(--bg-light);
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.color-preview-box {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: 2px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+}
+
+.color-preview-text {
+  font-family: monospace;
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+/* ===== UPLOAD AREA ===== */
+.upload-area {
+  position: relative;
+  border: 2px dashed var(--border-color);
+  border-radius: 12px;
+  padding: 24px;
+  text-align: center;
+  transition: all 0.3s;
+  background: var(--bg-light);
+}
+
+.upload-area:hover {
+  border-color: var(--primary-color);
+  background: rgba(99, 102, 241, 0.05);
+}
+
+.upload-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.upload-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.upload-icon {
+  font-size: 32px;
+}
+
+.upload-hint {
+  font-size: 11px;
+  color: var(--text-light);
+}
+
+/* ===== IMAGE LIST ===== */
+.image-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.image-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: var(--bg-light);
+  border-radius: 10px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.image-item:hover {
+  border-color: var(--border-color);
+  background: white;
+}
+
+.image-item.selected {
+  background: rgba(99, 102, 241, 0.1);
+  border-color: var(--primary-color);
+}
+
+.image-thumbnail {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+}
+
+.image-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.image-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+.image-size {
+  font-size: 11px;
+  color: var(--text-light);
+}
+
+.image-check {
+  color: var(--primary-color);
+  font-weight: bold;
+  font-size: 16px;
+}
+
+/* ===== IMAGE CONTROLS ===== */
+.image-controls {
+  margin-top: 20px;
+  padding: 16px;
+  background: var(--bg-light);
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+}
+
+.control-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.control-row:last-child {
+  margin-bottom: 0;
+}
+
+.control-row label {
+  min-width: 70px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-medium);
+}
+
+.opacity-slider {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  appearance: none;
+  background: var(--border-color);
+  cursor: pointer;
+}
+
+.opacity-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--primary-color);
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-group {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.btn-sm {
+  padding: 6px 10px;
+  font-size: 11px;
+  border-radius: 6px;
+  background: white;
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-sm:hover {
+  background: var(--bg-light);
+  border-color: var(--primary-color);
+}
+
+.btn-active {
+  background: var(--primary-color) !important;
+  color: white !important;
+  border-color: var(--primary-color) !important;
+}
+
+/* ===== AUTO PREVIEW TOGGLE ===== */
+.auto-preview-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  background: var(--bg-light);
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.toggle-switch {
+  position: relative;
+  width: 44px;
+  height: 24px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background-color: var(--text-light);
+  transition: 0.3s;
+  border-radius: 24px;
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.3s;
+  border-radius: 50%;
+}
+
+.toggle-switch input:checked + .toggle-slider {
+  background-color: var(--primary-color);
+}
+
+.toggle-switch input:checked + .toggle-slider:before {
+  transform: translateX(20px);
+}
+
+/* ===== TEXT CONTROLS ===== */
+.text-controls,
+.shape-controls {
+  padding: 16px;
+  background: var(--bg-light);
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+}
+
+.control-group {
+  margin-bottom: 16px;
+}
+
+.control-group:last-child {
+  margin-bottom: 0;
+}
+
+.control-group label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-medium);
+  margin-bottom: 8px;
+}
+
+.text-input,
+.select-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 14px;
+  transition: border-color 0.2s;
+}
+
+.text-input:focus,
+.select-input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+.select-input {
+  cursor: pointer;
+  background: white;
+}
+
+.mini-color-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  flex: 1;
+}
+
+.mini-color-swatch {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.mini-color-swatch:hover {
+  transform: scale(1.15);
+}
+
+.mini-color-swatch.selected {
+  border-color: var(--text-dark);
+  box-shadow: 0 0 0 2px white, 0 0 0 4px var(--primary-color);
+}
+
+/* ===== SHAPE BUTTONS ===== */
+.shape-buttons {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.shape-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 16px 12px;
+  background: white;
+  border: 2px solid var(--border-color);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.shape-btn:hover {
+  border-color: var(--primary-color);
+  background: rgba(99, 102, 241, 0.05);
+  transform: translateY(-2px);
+}
+
+.shape-icon {
+  font-size: 24px;
+  color: var(--primary-color);
+}
+
+.shape-btn span:last-child {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-medium);
+  text-transform: uppercase;
 }

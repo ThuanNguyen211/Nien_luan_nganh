@@ -1,5 +1,5 @@
 // src/App.jsx
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import './App.css';
 import { Viewer3D } from './components/Viewer3D';
 import { Editor2D } from './components/Editor2D';
@@ -16,8 +16,8 @@ class ErrorBoundary extends React.Component {
     return { hasError: true, error };
   }
 
-  componentDidCatch(error, info) {
-    console.error('Error caught by boundary:', error, info);
+  componentDidCatch() {
+    // Error logging can be sent to external service in production
   }
 
   render() {
@@ -43,18 +43,125 @@ export default function App() {
   const [previewTexture, setPreviewTexture] = useState(null);
   const [images, setImages] = useState([]);
   const [texts, setTexts] = useState([]);
+  const [shapes, setShapes] = useState([]);
   const [activeTool, setActiveTool] = useState('colors');
-  const [showUVChecker, setShowUVChecker] = useState(false);
+  const [autoPreview, setAutoPreview] = useState(true);
+  const [isExporting, setIsExporting] = useState(false);
+  const [templateSize, setTemplateSize] = useState({ width: 1024, height: 1024 });
 
-  const handleExport = () => {
-    alert('Export functionality coming soon!');
-  };
+  // Auto-preview với debounce khi design thay đổi
+  const autoExportTexture = useCallback(async () => {
+    if (!autoPreview || isExporting) return;
+    if (images.length === 0 && texts.length === 0 && shapes.length === 0) {
+      setPreviewTexture(null);
+      return;
+    }
+    
+    setIsExporting(true);
+    // Delay nhỏ để đảm bảo canvas đã render
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    try {
+      if (!stageRef.current) return;
+      const stage = stageRef.current.getStage();
+      const designLayer = stage.findOne('.design-layer');
+      const templateLayer = stage.findOne('.template-layer');
+      
+      if (!designLayer || !templateLayer) return;
+      
+      const currentScaleX = stage.scaleX();
+      const currentScaleY = stage.scaleY();
+      templateLayer.visible(false);
+      stage.scale({ x: 1, y: 1 });
+      stage.batchDraw();
+      
+      const dataURL = designLayer.toDataURL({ 
+        pixelRatio: 1,
+        x: 0,
+        y: 0,
+        width: templateSize.width,
+        height: templateSize.height
+      });
+      setPreviewTexture(dataURL);
+      
+      stage.scale({ x: currentScaleX, y: currentScaleY });
+      templateLayer.visible(true);
+      stage.batchDraw();
+    } catch {
+      // Silent fail for auto-preview
+    } finally {
+      setIsExporting(false);
+    }
+  }, [autoPreview, images, texts, shapes, isExporting, templateSize]);
 
+  // Trigger auto-preview khi images, texts hoặc shapes thay đổi
+  useEffect(() => {
+    const timer = setTimeout(autoExportTexture, 300);
+    return () => clearTimeout(timer);
+  }, [images, texts, shapes]);
+
+  //  SAVE DESIGN - Xuất file JSON
   const handleSave = () => {
-    alert('Save functionality coming soon!');
+    const designData = {
+      version: '1.0',
+      createdAt: new Date().toISOString(),
+      shirtColor,
+      images: images.map(img => ({
+        ...img,
+        // Giữ nguyên src base64
+      })),
+      texts,
+      shapes,
+      templateSize
+    };
+
+    const jsonString = JSON.stringify(designData, null, 2);
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    
+    const link = document.createElement('a');
+    link.download = `tshirt-design-${Date.now()}.json`;
+    link.href = url;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
-  // ✅ SỬA HÀM EXPORT: CHỈ EXPORT LAYER "design-layer" VỚI KÍCH THƯỚC GỐC
+  // 📂 IMPORT DESIGN - Nhập file JSON
+  const handleImport = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const designData = JSON.parse(e.target.result);
+        
+        // Validate version
+        if (!designData.version) {
+          alert('Invalid design file format');
+          return;
+        }
+
+        // Load design data
+        if (designData.shirtColor) setShirtColor(designData.shirtColor);
+        if (designData.images) setImages(designData.images);
+        if (designData.texts) setTexts(designData.texts);
+        if (designData.shapes) setShapes(designData.shapes);
+        
+        alert('Design imported successfully!');
+      } catch {
+        alert('Failed to import design: Invalid file format');
+      }
+    };
+    reader.readAsText(file);
+    
+    // Reset input để có thể import lại cùng file
+    event.target.value = '';
+  };
+
+  // ✅ EXPORT TEXTURE Ở KÍCH THƯỚC GỐC (KHÔNG BỊ SCALE)
   const exportDesignTexture = () => {
     return new Promise((resolve) => {
       if (!stageRef.current) {
@@ -71,21 +178,32 @@ export default function App() {
         return;
       }
 
+      // Lưu scale hiện tại
+      const currentScaleX = stage.scaleX();
+      const currentScaleY = stage.scaleY();
+
       // Ẩn template
       templateLayer.visible(false);
+      
+      // Reset scale về 1:1 để export đúng kích thước gốc
+      stage.scale({ x: 1, y: 1 });
       stage.batchDraw();
 
-      // Export ngay lập tức (không cần requestAnimationFrame vì không có animation)
+      // Export với kích thước gốc
       try {
         const dataURL = designLayer.toDataURL({
-          pixelRatio: 1, // ←←← DÙNG pixelRatio=1 để giữ kích thước gốc của template
+          pixelRatio: 1,
+          x: 0,
+          y: 0,
+          width: templateSize.width,
+          height: templateSize.height
         });
         resolve(dataURL);
-      } catch (err) {
-        console.error("Export error:", err);
+      } catch {
         resolve(null);
       } finally {
-        // Hiện lại template
+        // Khôi phục scale và hiện lại template
+        stage.scale({ x: currentScaleX, y: currentScaleY });
         templateLayer.visible(true);
         stage.batchDraw();
       }
@@ -95,10 +213,15 @@ export default function App() {
   const handlePreview = async () => {
     try {
       const dataURL = await exportDesignTexture();
+      
+      if (!dataURL) {
+        alert("Failed to export texture. Make sure you have added images or text.");
+        return;
+      }
+      
       setPreviewTexture(dataURL);
     } catch (error) {
-      console.error("Preview failed:", error);
-      alert("Could not generate preview.");
+      alert("Could not generate preview: " + error.message);
     }
   };
 
@@ -111,8 +234,17 @@ export default function App() {
           <div className="app-title">Custom T-Shirt Design Studio</div>
         </div>
         <div className="app-header-right">
+          {/* Import Button */}
+          <label className="header-btn import-btn">
+            📂 Import
+            <input
+              type="file"
+              accept=".json"
+              onChange={handleImport}
+              style={{ display: 'none' }}
+            />
+          </label>
           <button className="header-btn" onClick={handleSave}>💾 Save</button>
-          <button className="header-btn" onClick={handleExport}>📥 Export</button>
         </div>
       </header>
 
@@ -124,14 +256,8 @@ export default function App() {
           <ErrorBoundary>
             <Viewer3D
               shirtColor={shirtColor}
-              designTexture={showUVChecker ? '/uv_checker.png' : previewTexture}
+              designTexture={previewTexture}
             />
-            <button
-              className={`viewer-overlay-btn ${showUVChecker ? 'active' : ''}`}
-              onClick={() => setShowUVChecker(!showUVChecker)}
-            >
-              {showUVChecker ? '🔲 Hide UV Grid' : '🔳 Show UV Grid'}
-            </button>
           </ErrorBoundary>
         </div>
 
@@ -145,7 +271,12 @@ export default function App() {
             setImages={setImages}
             texts={texts}
             setTexts={setTexts}
+            shapes={shapes}
+            setShapes={setShapes}
             onPreview={handlePreview}
+            autoPreview={autoPreview}
+            setAutoPreview={setAutoPreview}
+            setTemplateSize={setTemplateSize}
           />
         </div>
       </div>

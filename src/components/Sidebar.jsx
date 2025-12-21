@@ -33,7 +33,10 @@ export function Sidebar({ activeTool, setActiveTool }) {
         <span>Text</span>
       </button>
 
-      <button className="sidebar-item" disabled style={{ opacity: 0.5 }}>
+      <button
+        className={`sidebar-item ${activeTool === 'shapes' ? 'active' : ''}`}
+        onClick={() => handleToolToggle('shapes')}
+      >
         <FaShapes />
         <span>Shapes</span>
       </button>
