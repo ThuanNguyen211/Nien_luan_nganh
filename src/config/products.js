@@ -50,7 +50,7 @@ export const PRODUCTS = {
     camera: {
       position: [0, 0.3, 0.8],
       target: [0, 0.1, 0],
-      fov: 25
+      fov: 50
     },
     meshTargets: ['cap', 'hat', 'body'],
     textureFlip: { x: 1, y: -1 },

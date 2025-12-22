@@ -10,15 +10,18 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@react-three/drei": "^10.7.6",
-    "@react-three/fiber": "^9.4.0",
-    "konva": "^10.0.2",
-    "react": "^19.1.1",
-    "react-dom": "^19.1.1",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+
+    "three": "^0.164.0",
+    "@react-three/fiber": "^8.15.16",
+    "@react-three/drei": "^9.122.0",
+
+    "konva": "^9.3.0",
+    "react-konva": "^18.2.10",
+    
     "react-error-boundary": "^6.0.0",
     "react-icons": "^5.5.0",
-    "react-konva": "^19.0.10",
-    "three": "^0.180.0",
     "use-image": "^1.1.4"
   },
   "devDependencies": {
