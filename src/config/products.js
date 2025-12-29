@@ -13,11 +13,8 @@ export const PRODUCTS = {
       target: [0.019, 1.229, -0.031],
       fov: 75
     },
-    // Mesh targets để áp dụng material
     meshTargets: ['shirt', 'tshirt', 'body'],
-    // Texture flip: { x: flipX, y: flipY }
     textureFlip: { x: 1, y: -1 },
-    // Label hiển thị
     label: 'Áo phông'
   },
   mug: {
@@ -27,17 +24,13 @@ export const PRODUCTS = {
     model: '/mug.glb',
     uvMap: '/mug_uv_map.png',
     defaultColor: '#ffffff',
-    // Camera position cho 3D viewer - điều chỉnh theo model mug
     camera: {
       position: [0, 0.15, 0.4],
       target: [0, 0.1, 0],
       fov: 50
     },
-    // Mesh targets để áp dụng material
     meshTargets: ['mug', 'cup', 'body', 'cylinder'],
-    // Texture flip: { x: flipX, y: flipY } - Flip cả X và Y
     textureFlip: { x: -1, y: -1 },
-    // Label hiển thị
     label: 'Ly sứ'
   },
   cap: {
@@ -74,8 +67,6 @@ export const PRODUCTS = {
   }
 };
 
-// Danh sách product IDs theo thứ tự hiển thị
 export const PRODUCT_ORDER = ['tshirt', 'mug', 'cap', 'phoneCase'];
 
-// Lấy product mặc định
 export const DEFAULT_PRODUCT = 'tshirt';

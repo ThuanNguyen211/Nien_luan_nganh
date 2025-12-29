@@ -839,7 +839,6 @@ export function Editor2D({
     <>
       <div className="editor-header">
         <div className="editor-title">Design Editor</div>
-        {/* <div className="editor-subtitle">Customize your T-shirt design</div> */}
       </div>
 
       <div className="editor-content">
